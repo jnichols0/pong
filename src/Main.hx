@@ -3,19 +3,20 @@ import Random;
 import Sys;
 
 class Main extends hxd.App {
-    var paddle_left : h2d.Bitmap;
-    var paddle_right: h2d.Bitmap;
-
     static var PADDLE_WIDTH : Int = 25;
     static var PADDLE_HEIGHT : Int = 150;
     static var BALL_SIZE : Int = 25;
     static var BALL_SPEED : Int = 7;
+
+    var paddle_left : h2d.Bitmap;
+    var paddle_right: h2d.Bitmap;
 
     var ball : h2d.Bitmap;
     var ball_angle : Int;
 
     var score_right : h2d.Text;
     var score_left : h2d.Text;
+    var debug : h2d.Text;
 
     var score_right_value : Int;
     var score_left_value : Int;
@@ -32,10 +33,20 @@ class Main extends hxd.App {
         if (random_direction == 1)  // 50% left 50% right
             ball_angle = 180;
         ball_angle += Random.int(-45, 45); 
+        ball_angle = ball_angle % 360;
     }
 
     override function init() {
         var font : h2d.Font = hxd.res.DefaultFont.get();
+        font.resizeTo(24);
+
+        //debug
+        debug = new h2d.Text(font);
+        debug.text = "0";
+        debug.x = Std.int(s2d.width * .75);
+        debug.y = 24;
+
+        score_right = new h2d.Text(font);
         score_right = new h2d.Text(font);
         score_right.text = "0";
         score_right.x = Std.int(s2d.width * .75);
@@ -58,13 +69,14 @@ class Main extends hxd.App {
         paddle_right.y = Std.int(s2d.height / 2 - 75);
 
         ball = new h2d.Bitmap(h2d.Tile.fromColor(0xFFFFFF, BALL_SIZE, BALL_SIZE, 1), s2d);
+
         reset_ball();
     }
 
     override function update(dt : Float) {
         // update the ball pos based on current angle and speed
-        ball.x += Math.cos(degrees_to_radians(ball_angle % 360)) * BALL_SPEED;
-        ball.y += Math.sin(degrees_to_radians(ball_angle % 360)) * BALL_SPEED;
+        ball.x += Math.cos(degrees_to_radians(ball_angle)) * BALL_SPEED;
+        ball.y += Math.sin(degrees_to_radians(ball_angle)) * BALL_SPEED;
 
         // Right scores a point
         if (ball.x + BALL_SIZE >= s2d.width){
@@ -81,7 +93,7 @@ class Main extends hxd.App {
         }
         
         // Ball hits ceiling 
-        if (ball.y +BALL_SIZE >= s2d.height || ball.y <= 0) {
+        if (ball.y + BALL_SIZE >= s2d.height || ball.y <= 0) {
             ball_angle = 360 - ball_angle;
         }
 
@@ -89,15 +101,20 @@ class Main extends hxd.App {
         if (ball.x <= paddle_left.x + BALL_SIZE &&
             ball.x + BALL_SIZE >= paddle_left.x &&
             ball.y <= paddle_left.y + 150 &&
-            ball.y + BALL_SIZE >= paddle_left.y){ 
+            ball.y + BALL_SIZE >= paddle_left.y) {
+            
+            // only bounce the ball if it's heading towards the paddle
+            if (ball_angle >= 90  && ball_angle <= 270)
                 ball_angle += 180 + Random.int(-30,30);
         }
         if (ball.x <= paddle_right.x + BALL_SIZE &&
             ball.x + BALL_SIZE >= paddle_right.x &&
             ball.y <= paddle_right.y + 150 &&
             ball.y + BALL_SIZE >= paddle_right.y) { 
+            if (ball_angle > 270 || ball_angle < 90) 
                 ball_angle += 180 + Random.int(-30,30);
         }
+        ball_angle = ball_angle % 360; 
 
         if ( K.isDown(K.W) )
             if (paddle_left.y - 5 <= 0)
